@@ -31,45 +31,66 @@ class DBHelper {
         self.db = db
     }
     
-    func createOrder(order : OrderData)  throws {
+    func createOrder(order: OrderData) throws {
         print("createOrder called")
-        print("Transaction begin")
-        try db.run("BEGIN IMMEDIATE TRANSACTION")
-        
-        // Insert order records
-        let insertQuery = orderTable.insert(
-            self.orderName <- order.name,
-            self.orderDetails <- order.details,
-            self.orderStatus <- order.status,
-            self.orderDate <- order.date,
-            self.productId <- order.productId,
-            self.productQuantity <- order.productQuantity
-        )
-        print("Inserting product record")
-        try db.run(insertQuery)
-        
-        //Update product records
-        var quantity = 0
-        for item in try! db.prepare(productTable) {
-            if(item[productId] == order.productId) {
-                quantity = item[productQuantity]
+        do {
+            print("Transaction begin")
+            try db.run("BEGIN IMMEDIATE TRANSACTION")
+            
+            // Insert order
+            let insertQuery = orderTable.insert(
+                self.orderName <- order.name,
+                self.orderDetails <- order.details,
+                self.orderStatus <- order.status,
+                self.orderDate <- order.date,
+                self.productId <- order.productId,
+                self.productQuantity <- order.productQuantity
+            )
+            
+            print("Inserting order record")
+            try db.run(insertQuery)
+            
+            // Fetch product quantity safely
+            guard let productRow = try db.pluck(productTable.filter(productId == order.productId)) else {
+                throw NSError(domain: "DBError", code: 404, userInfo: [NSLocalizedDescriptionKey : "Product not found"])
             }
-        }
-        let qun = quantity - order.productQuantity
-        let product = productTable.filter(order.productId == productId)
-        let update = product.update(
-            productQuantity <- qun
-        )
-        
-        print("Updating product record")
-        if try db.run(update) > 0 {
+            
+            let currentQty = productRow[productQuantity]
+            let newQty = currentQty - order.productQuantity
+            
+            if newQty < 0 {
+                throw NSError(domain: "DBError", code: 400, userInfo: [NSLocalizedDescriptionKey : "Insufficient stock quantity"])
+            }
+            
+            // Update product
+            print("Updating product record")
+            
+            let update = productTable.filter(productId == order.productId).update(
+                productQuantity <- newQty
+            )
+            
+            let updated = try db.run(update)
+            
+            if updated == 0 {
+                throw NSError(domain: "DBError", code: 500, userInfo: [NSLocalizedDescriptionKey : "Product update failed"])
+            }
+            
             print("Transaction committed")
             try db.run("COMMIT")
             print("Order created successfully")
-        } else {
-            print("something went wrong")
-            print("Transaction rollbacked")
-            try db.run("ROLLBACK")
+            
+        } catch {
+            print("Error occurred: \(error.localizedDescription)")
+            print("Rolling back transaction…")
+            
+            do {
+                try db.run("ROLLBACK")
+            } catch let rollbackError {
+                print("Rollback failed: \(rollbackError.localizedDescription)")
+            }
+            
+            throw error   // Pass error back to caller
         }
     }
+
 }
