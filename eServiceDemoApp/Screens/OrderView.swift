@@ -13,7 +13,7 @@ struct OrderView: View {
     @State var orderDetails: String = ""
     @State var orderStatus: String = "To do"
     let statusList = ["To do","In progress","Completed","Hold","Cancelled","Rejected"]
-    var order: OrderModel
+    var order: OrderData
     @Environment(\.dismiss) var popCurrentView
     
     var body: some View {
@@ -119,7 +119,7 @@ struct OrderView: View {
     }
     
     func updateOrder() {
-        let updatedOrder = OrderModel(orderId: order.orderId, name: $orderName.wrappedValue, details: $orderDetails.wrappedValue, status: $orderStatus.wrappedValue)
+        let updatedOrder = OrderData(id: 0, name: $orderName.wrappedValue, details: $orderDetails.wrappedValue, status: $orderStatus.wrappedValue, date: .now, productId: 0, productQuantity: 0)
         let isUpdated = OrderTable.shared.update(order: updatedOrder)
         if(isUpdated) {
             debugPrint("Order updated successfully")
@@ -128,5 +128,5 @@ struct OrderView: View {
 }
 
 #Preview {
-    //OrderView(order:OrderModel(orderId: 0, name: "", details: "", status: ""))
+    OrderView(order:OrderData(id: 0, name: "", details: "", status: "", date: .now, productId: 0, productQuantity: 0))
 }

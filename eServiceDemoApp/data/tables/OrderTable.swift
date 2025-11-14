@@ -14,9 +14,12 @@ class OrderTable {
     
     private let orderTable = Table("orders")
     private let orderId = Expression<Int>("orderId")
-    private let orderName = Expression<String>("OrderName")
+    private let orderName = Expression<String>("orderName")
     private let orderDetails = Expression<String>("orderDetails")
     private let orderStatus = Expression<String>("orderStatus")
+    private let orderDate = Expression<Date>("orderDate")
+    private let productId = Expression<Int>("productId")
+    private let productQuantity = Expression<Int>("productQuantity")
     
     private var db: Connection
     
@@ -28,16 +31,22 @@ class OrderTable {
                 table.column(orderName, defaultValue: "")
                 table.column(orderDetails, defaultValue: "")
                 table.column(orderStatus, defaultValue: "")
+                table.column(orderDate, defaultValue: Date())
+                table.column(productId, defaultValue: -1)
+                table.column(productQuantity, defaultValue: -1)
             }
         )
     }
     
-    func insert(order : OrderModel) -> Int64{
+    func insert(order : OrderData) -> Int64{
         do {
             let insert = orderTable.insert(
                 self.orderName <- order.name,
                 self.orderDetails <- order.details,
-                self.orderStatus <- order.status
+                self.orderStatus <- order.status,
+                self.orderDate <- order.date,
+                self.productId <- order.productId,
+                self.productQuantity <- order.productQuantity
             )
             
             let orderId = try db.run(insert)
@@ -48,16 +57,19 @@ class OrderTable {
         return 0
     }
     
-    func getAllOrders() -> [OrderModel] {
+    func getAllOrders() -> [OrderData] {
         
-        var orderList = [OrderModel]()
+        var orderList = [OrderData]()
         
         for item in try! db.prepare(orderTable) {
-            orderList.append(OrderModel(
-                orderId: item[orderId],
+            orderList.append(OrderData(
+                id: item[orderId],
                 name: item[orderName],
                 details: item[orderDetails],
                 status: item[orderStatus],
+                date: item[orderDate],
+                productId: item[productId],
+                productQuantity: item[productQuantity]
             ))
         }
         return orderList
@@ -78,9 +90,12 @@ class OrderTable {
         return false
     }
     
-    func update(order: OrderModel) -> Bool {
+    func update(order: OrderData) -> Bool {
         do {
-            let existingOrder = orderTable.filter(orderId == order.orderId)
+            
+            guard let orderid = order.id else { return false }
+            
+            let existingOrder = orderTable.filter(orderId == orderid)
             let update = existingOrder.update(
                 orderName <- order.name,
                 orderDetails <- order.details,

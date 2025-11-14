@@ -7,10 +7,10 @@
 
 import Foundation
 
-struct OrderModel: Identifiable, Hashable {
-    var id = UUID()
-    var orderId: Int
+struct Product: Hashable {
+    var id: Int?
     var name: String
     var details: String
-    var status: String
+    var quantity: Int
+    var price: Double
 }

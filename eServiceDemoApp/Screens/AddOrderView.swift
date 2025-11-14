@@ -12,8 +12,10 @@ struct AddOrderView: View {
     @State var orderName: String = ""
     @State var orderDetails: String = ""
     @State var orderStatus: String = "To do"
+    @State var selectedProduct: Product?
     let statusList = ["To do","In progress","Completed","Hold","Cancelled","Rejected"]
-    
+    @State var productNames: [Product]?
+    @State var quantity: Int = 1
     @Environment(\.dismiss) var popCurrentView
     
     var body: some View {
@@ -42,6 +44,24 @@ struct AddOrderView: View {
                         Text("\("Selected order status:") \(self.$orderStatus.wrappedValue)")
                             .font(.subheadline)
                     })
+                    
+                    VStack(alignment: .leading, spacing: 20) {
+                        
+                        Picker("Select Product", selection: $selectedProduct) {
+                            ForEach(products, id: \.self) { product in
+                                Text(product.name).tag(Optional(product))
+                            }
+                        }
+                        .font(.headline)
+                    }
+                    .onAppear {
+                        self.productNames = loadProductList()
+                        if selectedProduct == nil {
+                            selectedProduct = products.first
+                        }
+                    }
+                    
+                    Stepper("Quantity: \(quantity)", value: $quantity)
                     
                     bottomActionButtons()
                 }
@@ -85,7 +105,7 @@ struct AddOrderView: View {
             }
             .onTapGesture(perform: {
                 debugPrint("Add order tapped")
-                addOrderAction()
+                createOrderAction()
                 popCurrentView()
             })
             
@@ -111,16 +131,23 @@ struct AddOrderView: View {
         }
     }
     
-    private func addOrderAction() {
+    private func createOrderAction() {
+        Task(priority: .background) {
+            let dbHelper = DBHelper.shared
+            try dbHelper.createOrder(order: OrderData(name: self.orderName, details: self.orderDetails, status: self.orderStatus, date: .now, productId: self.selectedProduct?.id ?? 0, productQuantity: self.quantity))
+        }
+    }
+    
+    func loadProductList() -> [Product]{
         
-        let orderTable = OrderTable.shared
+        let productTable = ProductTable.shared
         
         Task(priority: .background) {
-            let orderId = orderTable.insert(order: OrderModel(orderId: 0, name: self.orderName, details: self.orderDetails, status: self.orderStatus))
-            if orderId > 0 {
-                print("Order inserted")
-            }
+            let productList = productTable.getProductList()
+            return productList
         }
+        
+        return [Product]()
     }
 }
 

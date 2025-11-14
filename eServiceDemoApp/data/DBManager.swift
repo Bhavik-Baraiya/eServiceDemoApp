@@ -18,7 +18,7 @@ class DBManager {
             .documentDirectory,
             .userDomainMask, true
         ).first!
-        print("DB Connection Location : \(path)/OrderDatabase.db")
+        print("DB Connection Location : \(path)/eServiceAppDB.db")
         db = try! Connection("\(path)/OrderDatabase.db")
     }
     

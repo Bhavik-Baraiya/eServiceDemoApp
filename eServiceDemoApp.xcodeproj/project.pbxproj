@@ -14,9 +14,22 @@
 		82DDCBC92EC4A9D90037DE2B /* eServiceDemoApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = eServiceDemoApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		82FCB9AA2EC62575003481CC /* Exceptions for "eServiceDemoApp" folder in "eServiceDemoApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+			);
+			target = 82DDCBC82EC4A9D90037DE2B /* eServiceDemoApp */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		82DDCBCB2EC4A9D90037DE2B /* eServiceDemoApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				82FCB9AA2EC62575003481CC /* Exceptions for "eServiceDemoApp" folder in "eServiceDemoApp" target */,
+			);
 			path = eServiceDemoApp;
 			sourceTree = "<group>";
 		};

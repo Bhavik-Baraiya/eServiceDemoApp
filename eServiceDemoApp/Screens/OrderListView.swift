@@ -10,7 +10,7 @@ import SwiftUI
 struct OrderListView: View {
     
     let orderTable = OrderTable.shared
-    @State var orders: [OrderModel]
+    @State var orders: [OrderData]
     
     var body: some View {
         NavigationStack {
@@ -18,7 +18,7 @@ struct OrderListView: View {
                 List {
                     ForEach (self.orders, id: \.self) { order in
                         NavigationLink(destination: OrderView(order:order)) {
-                            Text("\(order.orderId)       \(order.name)")
+                            Text("\(String(describing: order.id))       \(order.name)")
                         }
                         .font(.headline.italic())
                         .padding([.top,.bottom],10)
@@ -55,7 +55,7 @@ struct OrderListView: View {
     
     func removeOrder(at offsets: IndexSet) {
         for index in offsets {
-            let orderIdToDelete = orders[index].orderId
+            guard let orderIdToDelete = orders[index].id else { return }
             let isDeleted = OrderTable.shared.delete(orderId: orderIdToDelete)
             if(isDeleted) {
                 debugPrint("Order updated successfully")
@@ -66,5 +66,5 @@ struct OrderListView: View {
 }
 
 #Preview {
-    OrderListView(orders: [OrderModel(orderId: 0, name: "", details: "", status: "")])
+    OrderListView(orders: [OrderData(id: 0, name: "", details: "", status: "", date: .now, productId: 0, productQuantity: 0)])
 }
