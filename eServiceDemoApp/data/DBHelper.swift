@@ -33,32 +33,43 @@ class DBHelper {
     
     func createOrder(order : OrderData)  throws {
         print("createOrder called")
-            try db.run("BEGIN IMMEDIATE TRANSACTION")
-            print("Begin transaction")
-            // Insert order records
-            let insertQuery = orderTable.insert(
-                self.orderName <- order.name,
-                self.orderDetails <- order.details,
-                self.orderStatus <- order.status,
-                self.orderDate <- order.date,
-                self.productId <- order.productId,
-                self.productQuantity <- order.productQuantity
-            )
-            try db.run(insertQuery)
-            
-            //Update product records
-            let product = productTable.filter(order.productId == productId)
-            let quantity = product[productQuantity]
-            let update = product.update(
-                productQuantity <- quantity - order.productQuantity
-            )
-            
-            if try db.run(update) > 0 {
-                try db.run("COMMIT")
-                print("Order created successfully. COMMIT")
-            } else {
-                try db.run("ROLLBACK")
-                print("something went wrong ROLLBACK")
+        print("Transaction begin")
+        try db.run("BEGIN IMMEDIATE TRANSACTION")
+        
+        // Insert order records
+        let insertQuery = orderTable.insert(
+            self.orderName <- order.name,
+            self.orderDetails <- order.details,
+            self.orderStatus <- order.status,
+            self.orderDate <- order.date,
+            self.productId <- order.productId,
+            self.productQuantity <- order.productQuantity
+        )
+        print("Inserting product record")
+        try db.run(insertQuery)
+        
+        //Update product records
+        var quantity = 0
+        for item in try! db.prepare(productTable) {
+            if(item[productId] == order.productId) {
+                quantity = item[productQuantity]
             }
         }
+        let qun = quantity - order.productQuantity
+        let product = productTable.filter(order.productId == productId)
+        let update = product.update(
+            productQuantity <- qun
+        )
+        
+        print("Updating product record")
+        if try db.run(update) > 0 {
+            print("Transaction committed")
+            try db.run("COMMIT")
+            print("Order created successfully")
+        } else {
+            print("something went wrong")
+            print("Transaction rollbacked")
+            try db.run("ROLLBACK")
+        }
+    }
 }

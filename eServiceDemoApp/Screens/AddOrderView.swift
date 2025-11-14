@@ -12,9 +12,12 @@ struct AddOrderView: View {
     @State var orderName: String = ""
     @State var orderDetails: String = ""
     @State var orderStatus: String = "To do"
-    @State var selectedProduct: Product?
+    @State private var selectedProductId: Int? = nil
+    
     let statusList = ["To do","In progress","Completed","Hold","Cancelled","Rejected"]
-    @State var productNames: [Product]?
+    
+    @State var products: [Product] = []
+    
     @State var quantity: Int = 1
     @Environment(\.dismiss) var popCurrentView
     
@@ -33,31 +36,33 @@ struct AddOrderView: View {
                         placeHolder: "Enter order details",
                         textData: $orderDetails
                     )
-                    VStack(alignment: .leading,spacing: 20.0, content: {
-                        
-                        Picker("Order Status", selection: self.$orderStatus, content: {
-                            ForEach(statusList, id: \.self) { status in
-                                Text(status)
-                            }
-                        })
-                        .font(.headline)
-                        Text("\("Selected order status:") \(self.$orderStatus.wrappedValue)")
-                            .font(.subheadline)
-                    })
                     
                     VStack(alignment: .leading, spacing: 20) {
                         
-                        Picker("Select Product", selection: $selectedProduct) {
-                            ForEach(products, id: \.self) { product in
-                                Text(product.name).tag(Optional(product))
+                        Picker("Order Status", selection: self.$orderStatus) {
+                            ForEach(statusList, id: \.self) { status in
+                                Text(status)
+                            }
+                        }
+                        .font(.headline)
+                        
+                        Text("Selected order status: \(orderStatus)")
+                            .font(.subheadline)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 20) {
+                        
+                        Picker("Select Product", selection: $selectedProductId) {
+                            ForEach(products, id: \.id) { product in
+                                Text(product.name).tag(product.id)
                             }
                         }
                         .font(.headline)
                     }
                     .onAppear {
-                        self.productNames = loadProductList()
-                        if selectedProduct == nil {
-                            selectedProduct = products.first
+                        self.products = loadProductList()
+                        if selectedProductId == nil {
+                            selectedProductId = products.first?.id
                         }
                     }
                     
@@ -91,9 +96,7 @@ struct AddOrderView: View {
         
         HStack(alignment:.center) {
             Spacer()
-            Button(action: {
-                
-            }) {
+            Button(action: {}) {
                 Text("Add")
                     .font(.headline)
                     .foregroundColor(Color.white)
@@ -103,17 +106,15 @@ struct AddOrderView: View {
                             .foregroundColor(Color.primaryThemeColor)
                     })
             }
-            .onTapGesture(perform: {
-                debugPrint("Add order tapped")
+            .onTapGesture {
+                print("Add order tapped")
                 createOrderAction()
                 popCurrentView()
-            })
+            }
             
             Spacer().frame(width:40)
             
-            Button(action: {
-                
-            }) {
+            Button(action: {}) {
                 Text("Cancel")
                     .font(.headline)
                     .padding()
@@ -123,10 +124,10 @@ struct AddOrderView: View {
                             .foregroundColor(Color.secondaryThemeColor)
                     })
             }
-            .onTapGesture(perform: {
-                debugPrint("Cancel tapped")
+            .onTapGesture {
+                print("Cancel tapped")
                 popCurrentView()
-            })
+            }
             Spacer()
         }
     }
@@ -134,20 +135,25 @@ struct AddOrderView: View {
     private func createOrderAction() {
         Task(priority: .background) {
             let dbHelper = DBHelper.shared
-            try dbHelper.createOrder(order: OrderData(name: self.orderName, details: self.orderDetails, status: self.orderStatus, date: .now, productId: self.selectedProduct?.id ?? 0, productQuantity: self.quantity))
+            
+            let selectedProduct = products.first { $0.id == selectedProductId }
+            
+            try dbHelper.createOrder(
+                order: OrderData(
+                    name: self.orderName,
+                    details: self.orderDetails,
+                    status: self.orderStatus,
+                    date: .now,
+                    productId: selectedProduct?.id ?? 0,
+                    productQuantity: self.quantity
+                )
+            )
         }
     }
     
-    func loadProductList() -> [Product]{
-        
+    func loadProductList() -> [Product] {
         let productTable = ProductTable.shared
-        
-        Task(priority: .background) {
-            let productList = productTable.getProductList()
-            return productList
-        }
-        
-        return [Product]()
+        return productTable.getProductList()
     }
 }
 
