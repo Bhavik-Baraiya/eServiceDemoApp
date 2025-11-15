@@ -44,6 +44,13 @@ struct ContentView: View {
                     Text("Load products")
                 }
                 
+                Button(action:{
+                    self.performDBLock()
+                }
+                ){
+                    Text("Perform DBLOCK")
+                }
+                
                 Spacer()
                 Text("Welcome to eService")
                     .foregroundColor(Color.secondaryThemeColor)
@@ -60,6 +67,31 @@ struct ContentView: View {
             let productId = productTable.insert(product: product)
             print("Inserted product with ID: \(productId)")
         }
+    }
+    
+    func performDBLock() {
+        let productTable = ProductTable.shared
+        let productTable1 = ProductTable.shared
+        
+        DispatchQueue.global(qos: .background).async(execute: {
+            
+            print("Inserting record on product table")
+            for product in products {
+                let productId = productTable.insert(product: product)
+                print("Inserted product with ID: \(productId)")
+            }
+            
+        })
+        
+        DispatchQueue.global(qos: .background).async(execute: {
+            
+            print("Updating record on product table")
+            let productList = productTable1.getProductList()
+            for product in productList {
+                let isUpdated = productTable1.update(product: product)
+                print("Updated \(isUpdated) product with ID:\(String(describing: product.id))")
+            }
+        })
     }
 }
 
