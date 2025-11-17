@@ -37,6 +37,16 @@ struct ContentView: View {
                         .cornerRadius(10)
                 }
                 
+                NavigationLink(destination: UserView()) {
+                    Text("View User")
+                        .frame(width:190)
+                        .font(.headline)
+                        .padding()
+                        .background(Color.primaryThemeColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                
                 Button(action:{
                     self.loadProducts()
                 }
