@@ -64,4 +64,26 @@ class ProductTable {
         }
         return productList
     }
+    
+    func update(product: Product) -> Bool {
+        do {
+            
+            guard let productid = product.id else { return false }
+            
+            let existingProduct = productTable.filter(productId == productid)
+            let update = existingProduct.update(
+                productQuantity <- product.quantity+1,
+            )
+            
+            if try db.run(update) > 0 {
+                print("Product updated successfully.")
+                return true
+            } else {
+                print("Product not found.")
+            }
+        } catch {
+            print("Error while updating Product: \(error)")
+        }
+        return false
+    }
 }
